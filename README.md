@@ -169,17 +169,6 @@ The configuration file uses ISO 8601 timestamps for cross-platform compatibility
 - Refresh token rotation happens weekly
 - Zero maintenance required
 
-## Custom Sensor Data
-
-You can add custom sensor readings using the `add_sensor()` method:
-
-```python
-relay = JunctionRelay()
-relay.add_sensor("temperature", "23.5")
-relay.add_sensor("humidity", "65")
-relay.add_sensor("custom_sensor", "some_value")
-```
-
 ## System Statistics
 
 The client automatically reports these system statistics:
