@@ -538,10 +538,10 @@ class JunctionRelay:
             # Add sensor data
             health_data.update(self.sensors)
             
-            # Prepare payload - send sensor data as plain JSON
+            # Prepare payload - send sensor data as JSON string
             payload = {
                 "Status": "online",
-                "SensorData": health_data
+                "SensorData": json.dumps(health_data, separators=(',', ':'))
             }
             
             print(f"DEBUG: HTTP payload: {json.dumps(payload)}")
