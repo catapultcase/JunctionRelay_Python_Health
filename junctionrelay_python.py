@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 junctionrelay_python.py for Raspberry Pi
-Updated to match ESP32 token management architecture - NO ENCRYPTION VERSION
+Health-only version - NO SENSOR DATA
 """
 
 import json
@@ -30,7 +30,6 @@ class JunctionRelay:
         self.refresh_token_expires_at = 0  # Unix timestamp
         self.last_token_refresh = 0
         self.last_report = 0
-        self.sensors = {}
         
         # Constants (matching ESP32 version)
         self.JWT_REFRESH_BUFFER = 300  # 5 minutes in seconds
@@ -483,65 +482,17 @@ class JunctionRelay:
         print("⚠️ Token refresh failed - clearing stored tokens")
         self.clear_stored_tokens()
         print("🔄 Device will need to re-register")
-        
-    def add_sensor(self, key: str, value: str):
-        """Add sensor data"""
-        self.sensors[key] = value
-        
-    def get_system_stats(self) -> Dict[str, Any]:
-        """Get system statistics similar to ESP32 version"""
-        try:
-            # Get uptime
-            with open('/proc/uptime', 'r') as f:
-                uptime = int(float(f.readline().split()[0]))
-                
-            # Get memory info
-            memory = psutil.virtual_memory()
-            
-            # Get CPU temperature (Raspberry Pi specific)
-            cpu_temp = None
-            try:
-                result = subprocess.run(['vcgencmd', 'measure_temp'], 
-                                      capture_output=True, text=True, timeout=5)
-                if result.returncode == 0:
-                    temp_str = result.stdout.strip()
-                    cpu_temp = float(temp_str.replace('temp=', '').replace("'C", ''))
-            except:
-                pass
-                
-            stats = {
-                "uptime": uptime,
-                "freeHeap": memory.available,
-                "totalMemory": memory.total,
-                "memoryUsage": memory.percent,
-                "cpuUsage": psutil.cpu_percent(interval=1)
-            }
-            
-            if cpu_temp is not None:
-                stats["cpuTemp"] = cpu_temp
-                
-            return stats
-            
-        except Exception as e:
-            print(f"❌ Error getting system stats: {e}")
-            return {"uptime": int(time.time()), "error": str(e)}
             
     def send_health(self):
-        """Send health report to cloud service"""
+        """Send health report to cloud service - health only, no sensor data"""
         try:
             if not self.registered or not self.jwt:
                 return
                 
-            # Prepare health data
-            health_data = self.get_system_stats()
-            
-            # Add sensor data
-            health_data.update(self.sensors)
-            
-            # Prepare payload - send sensor data as JSON string
+            # Health-only payload - no sensor data
             payload = {
                 "Status": "online",
-                "SensorData": json.dumps(health_data, separators=(',', ':'))
+                "SensorData": ""
             }
             
             print(f"DEBUG: HTTP payload: {json.dumps(payload)}")
@@ -581,9 +532,6 @@ class JunctionRelay:
                 print(f"❌ Health failed: {response.status_code}")
                 print(f"DEBUG: Error response: {response.text}")
                 
-            # Clear sensors after sending
-            self.sensors.clear()
-            
         except Exception as e:
             print(f"❌ Health send error: {e}")
             
@@ -665,9 +613,6 @@ def main():
         while True:
             if not relay.handle():
                 break
-                
-            # Add your actual sensor readings here using:
-            # relay.add_sensor("key", "value")
                 
             time.sleep(1)
             
